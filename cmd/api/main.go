@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/xcxsar/pos-api/internal/api"
 	"github.com/xcxsar/pos-api/internal/config"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
@@ -36,12 +37,16 @@ func main() {
 
 	dbQueries := sqlc.New(db)
 
-	var apiCfg config.ApiConfig
+	apiCfg := &config.ApiConfig{
+		Queries: dbQueries,
+		DB:      db,
+	}
 
-	apiCfg.Queries = dbQueries
-	apiCfg.DB = db
+	apiApp := api.NewAPI(apiCfg)
 
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("POST /api/users", apiApp.CreateUser)
 
 	server := &http.Server{
 		Addr:    ":" + port,
