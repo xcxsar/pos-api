@@ -72,15 +72,7 @@ choco install make
 cd internal/db
 ```
 
-2. Create a `.env` file and fill in the missing values (Use `.env.template` and remember to update the connection string, the one provided is just a template).
-
-Example:
-
-```.env
-POSTGRES_DB="dev_db"
-POSTGRES_USER="admin"
-POSTGRES_PASSWORD="ultrasecurepassword"
-```
+2. Create a `.env` fill, use the template provided and fill in the actual values you want your database to use.
 
 3. Run the docker compose command
 
@@ -98,7 +90,7 @@ docker compose up -d
 cd internal/db/migrations
 ```
 
-3. Run the up migration command
+3. Run the desired migration command
 
 To update your database to the latest unsynced migration:
 
