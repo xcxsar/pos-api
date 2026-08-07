@@ -121,3 +121,41 @@ make sqlc
 ```
 
 This will place the generated code in `internal/store/sqlc`. Do not modify these files manually.
+
+# Endpoints
+
+## Resources
+
+### Users
+
+#### POST /api/users
+
+Creates a user. It handles password validation with the following rules:
+
+- Be 8 characters long.
+- Contain at lest one uppercase letter.
+- Contain at leat one lowercase letter.
+- Contain at least one digit.
+- Contain at least one of the following special characters: `@$!%\*?&`.
+
+If the password is valid then it is hashed before being inserted into the database.
+
+Example request body:
+
+```json
+{
+  "email": "xcxsar@github.co",
+  "password": "passW0rd123!"
+}
+```
+
+Example response:
+
+```json
+{
+  "id": "11623d71-9a47-4fec-87a4-023f607af30d",
+  "created_at": "2026-08-07T22:56:16.001797Z",
+  "updated_at": "2026-08-07T22:56:16.001797Z",
+  "email": "xcxsar@github.co"
+}
+```
