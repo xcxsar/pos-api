@@ -72,7 +72,7 @@ choco install make
 cd internal/db
 ```
 
-2. Create a `.env` fill, use the template provided and fill in the actual values you want your database to use.
+2. Create a `.env` file, use the template provided and fill in the actual values you want your database to use.
 
 3. Run the docker compose command
 
