@@ -8,14 +8,9 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/xcxsar/pos-api/internal/config"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
-
-type apiConfig struct {
-	queries   *sqlc.Queries
-	db        *sql.DB
-	jwtSecret string
-}
 
 func main() {
 	if err := godotenv.Load("../../.env"); err != nil {
@@ -41,10 +36,10 @@ func main() {
 
 	dbQueries := sqlc.New(db)
 
-	var apiCfg apiConfig
+	var apiCfg config.ApiConfig
 
-	apiCfg.queries = dbQueries
-	apiCfg.db = db
+	apiCfg.Queries = dbQueries
+	apiCfg.DB = db
 
 	mux := http.NewServeMux()
 
