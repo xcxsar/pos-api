@@ -1,4 +1,4 @@
-# Dependencias
+# Dependencies
 
 ## Goose
 
@@ -6,15 +6,15 @@
 go install github.com/pressly/goose/v3/cmd/goose@latest
 ```
 
-# Crear Base de Datos
+# Create Database
 
-1. Ubicarse en el directorio internal/db
+1. Navigate to internal/db
 
 ```bash
 cd internal/db
 ```
 
-2. Ejecutar el archivo docker-compose
+2. Run the docker compose command
 
 ```bash
 docker compose up -d
