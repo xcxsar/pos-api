@@ -46,7 +46,7 @@ func (api *API) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !service.CheckPassword(params.Password) {
-		respondWithError(w, http.StatusBadRequest, "password must be 8 characters long, contain at lest one uppercase letter, at leat one lowercase letter, at least one digit and at least one of the following special characters: @$!%*?&")
+		respondWithError(w, http.StatusBadRequest, "password must be at least 8 characters long, contain at lest one uppercase letter, at leat one lowercase letter, at least one digit and at least one of the following special characters: @$!%*?&")
 		return
 	}
 
