@@ -47,6 +47,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /api/users", apiApp.CreateUser)
+	mux.HandleFunc("GET /api/users/{userID}", apiApp.GetUserByID)
 
 	server := &http.Server{
 		Addr:    ":" + port,

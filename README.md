@@ -128,7 +128,7 @@ This will place the generated code in `internal/store/sqlc`. Do not modify these
 
 ### Users
 
-#### POST /api/users
+#### `POST /api/users`
 
 Creates a user. It handles password validation with the following rules:
 
@@ -157,5 +157,24 @@ Example response:
   "created_at": "2026-08-07T22:56:16.001797Z",
   "updated_at": "2026-08-07T22:56:16.001797Z",
   "email": "xcxsar@github.co"
+}
+```
+
+#### `GET /api/users/{userID}`
+
+Gets a user by the provided ID. No body is requested.
+
+Example URL:
+
+`http://localhost:8080/api/users/11623d71-9a47-4fec-87a4-023f607af30d`
+
+Example response:
+
+```json
+{
+  "id": "11623d71-9a47-4fec-87a4-023f607af30d",
+  "created_at": "2026-08-07T22:56:16.001797Z",
+  "updated_at": "2026-08-07T22:56:16.001797Z",
+  "email": "xcxsar@gmail.com"
 }
 ```

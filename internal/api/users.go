@@ -22,7 +22,25 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
-func mapUser(u sqlc.CreateUserRow) User {
+func mapCreateUserRow(u sqlc.CreateUserRow) User {
+	return User{
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Email:     u.Email,
+	}
+}
+
+func mapGetUserByIDRow(u sqlc.GetUserByIDRow) User {
+	return User{
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Email:     u.Email,
+	}
+}
+
+func mapSQLCUser(u sqlc.User) User {
 	return User{
 		ID:        u.ID,
 		CreatedAt: u.CreatedAt,
@@ -67,7 +85,28 @@ func (api *API) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := mapUser(user)
+	res := mapCreateUserRow(user)
 
 	respondWithJSON(w, http.StatusCreated, res)
+}
+
+func (api *API) GetUserByID(w http.ResponseWriter, r *http.Request) {
+	userID := r.PathValue("userID")
+	parsedID, err := uuid.Parse(userID)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	user, err := api.Cfg.Queries.GetUserByID(r.Context(), parsedID)
+
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "no user found")
+		return
+	}
+
+	res := mapGetUserByIDRow(user)
+
+	respondWithJSON(w, http.StatusOK, res)
 }
