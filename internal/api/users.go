@@ -40,6 +40,15 @@ func mapGetUserByIDRow(u sqlc.GetUserByIDRow) User {
 	}
 }
 
+func mapUpdateUserEmailRow(u sqlc.UpdateUserEmailRow) User {
+	return User{
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Email:     u.Email,
+	}
+}
+
 func mapSQLCUser(u sqlc.User) User {
 	return User{
 		ID:        u.ID,
@@ -109,4 +118,53 @@ func (api *API) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	res := mapGetUserByIDRow(user)
 
 	respondWithJSON(w, http.StatusOK, res)
+}
+
+func (api *API) UpdateEmail(w http.ResponseWriter, r *http.Request) {
+	token, err := service.GetBearerToken(r.Header)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+
+	userID, err := service.ValidateJWT(token, api.Cfg.JWTSecret)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+
+	type params struct {
+		Email string `json:"email"`
+	}
+
+	var param params
+
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&param)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid request format")
+		return
+	}
+
+	if param.Email == "" {
+		respondWithError(w, http.StatusBadRequest, "email is required")
+		return
+	}
+
+	user, err := api.Cfg.Queries.UpdateUserEmail(r.Context(), sqlc.UpdateUserEmailParams{
+		Email: param.Email,
+		ID:    userID,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not update email")
+		return
+	}
+
+	res := mapUpdateUserEmailRow(user)
+
+	respondWithJSON(w, http.StatusCreated, res)
 }
