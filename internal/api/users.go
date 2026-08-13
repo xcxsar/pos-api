@@ -166,5 +166,5 @@ func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 
 	res := mapUpdateUserEmailRow(user)
 
-	respondWithJSON(w, http.StatusCreated, res)
+	respondWithJSON(w, http.StatusOK, res)
 }
