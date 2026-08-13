@@ -50,7 +50,8 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", apiApp.CreateUser)
 	mux.HandleFunc("GET /api/users/{userID}", apiApp.GetUserByID)
-	mux.HandleFunc("PATCH /api/users/email", apiApp.UpdateUserEmail)
+	mux.HandleFunc("PATCH /api/user/email", apiApp.UpdateUserEmail)
+	mux.HandleFunc("PATCH /api/user/password", apiApp.UpdateUserPassword)
 
 	mux.HandleFunc("POST /api/login", apiApp.LogIn)
 

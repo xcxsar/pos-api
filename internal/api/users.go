@@ -49,6 +49,15 @@ func mapUpdateUserEmailRow(u sqlc.UpdateUserEmailRow) User {
 	}
 }
 
+func mapUpdateUserPasswordRow(u sqlc.UpdateUserPasswordRow) User {
+	return User{
+		ID:        u.ID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+		Email:     u.Email,
+	}
+}
+
 func mapSQLCUser(u sqlc.User) User {
 	return User{
 		ID:        u.ID,
@@ -165,6 +174,62 @@ func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := mapUpdateUserEmailRow(user)
+
+	respondWithJSON(w, http.StatusOK, res)
+}
+
+func (api *API) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
+	token, err := service.GetBearerToken(r.Header)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+
+	userID, err := service.ValidateJWT(token, api.Cfg.JWTSecret)
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+
+	type params struct {
+		Password string `json:"password"`
+	}
+
+	var param params
+
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&param)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid request format")
+		return
+	}
+
+	if !service.CheckPassword(param.Password) {
+		respondWithError(w, http.StatusBadRequest, "password must be at least 8 characters long, contain at lest one uppercase letter, at leat one lowercase letter, at least one digit and at least one of the following special characters: @$!%*?&")
+		return
+	}
+
+	hashedPassword, err := service.HashPassword(param.Password)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not hash password")
+		return
+	}
+
+	user, err := api.Cfg.Queries.UpdateUserPassword(r.Context(), sqlc.UpdateUserPasswordParams{
+		HashedPassword: hashedPassword,
+		ID:             userID,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not update password")
+		return
+	}
+
+	res := mapUpdateUserPasswordRow(user)
 
 	respondWithJSON(w, http.StatusOK, res)
 }
