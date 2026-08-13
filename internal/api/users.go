@@ -120,7 +120,7 @@ func (api *API) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, res)
 }
 
-func (api *API) UpdateEmail(w http.ResponseWriter, r *http.Request) {
+func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 	token, err := service.GetBearerToken(r.Header)
 
 	if err != nil {
