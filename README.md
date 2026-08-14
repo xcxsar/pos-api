@@ -162,7 +162,7 @@ Example response:
 
 #### `GET /api/users/{userID}`
 
-Gets a user by the provided ID. No body is requested.
+Gets a user by the provided ID. No body is required.
 
 Example URL:
 
@@ -176,5 +176,51 @@ Example response:
   "created_at": "2026-08-07T22:56:16.001797Z",
   "updated_at": "2026-08-07T22:56:16.001797Z",
   "email": "xcxsar@gmail.com"
+}
+```
+
+#### `PATCH /api/user/email`
+
+Updates a user's email. Bearer token authorization header is required.
+
+Example request body:
+
+```json
+{
+  "email": "xcxs4r@gmail.com"
+}
+```
+
+Example response:
+
+```json
+{
+  "id": "11623d71-9a47-4fec-87a4-023f607af30d",
+  "created_at": "2026-08-07T22:56:16.001797Z",
+  "updated_at": "2026-08-14T00:13:20.09183Z",
+  "email": "xcxs4r@gmail.com"
+}
+```
+
+#### `PATCH /api/user/password`
+
+Updates a user's password. Bearer token authorization header is required.
+
+Example request body:
+
+```json
+{
+  "password": "passW000rd123!"
+}
+```
+
+Example response:
+
+```json
+{
+  "id": "11623d71-9a47-4fec-87a4-023f607af30d",
+  "created_at": "2026-08-07T22:56:16.001797Z",
+  "updated_at": "2026-08-14T00:18:15.941573Z",
+  "email": "xcxs4r@gmail.com"
 }
 ```
