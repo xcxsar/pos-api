@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -93,4 +94,27 @@ func (api *API) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusCreated, res)
+}
+
+func (api *API) GetProducts(w http.ResponseWriter, r *http.Request) {
+	products, err := api.Cfg.Queries.GetProducts(r.Context())
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not retrieve products")
+	}
+
+	var res []product
+
+	for _, p := range products {
+		product, err := mapProduct(p)
+
+		if err != nil {
+			log.Printf("Skipping product %d due to mapping error: %v", p.ID, err)
+			continue
+		}
+
+		res = append(res, product)
+	}
+
+	respondWithJSON(w, http.StatusOK, res)
 }
