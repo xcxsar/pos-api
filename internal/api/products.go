@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -114,6 +115,32 @@ func (api *API) GetProducts(w http.ResponseWriter, r *http.Request) {
 		}
 
 		res = append(res, product)
+	}
+
+	respondWithJSON(w, http.StatusOK, res)
+}
+
+func (api *API) GetProductByID(w http.ResponseWriter, r *http.Request) {
+	productID := r.PathValue("productID")
+	parsedID, err := strconv.ParseInt(productID, 10, 64)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	product, err := api.Cfg.Queries.GetProductById(r.Context(), parsedID)
+
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "product does not exist")
+		return
+	}
+
+	res, err := mapProduct(product)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not map product")
+		return
 	}
 
 	respondWithJSON(w, http.StatusOK, res)

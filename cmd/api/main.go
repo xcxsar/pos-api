@@ -57,6 +57,7 @@ func main() {
 
 	mux.HandleFunc("POST /api/products", apiApp.CreateProduct)
 	mux.HandleFunc("GET /api/products", apiApp.GetProducts)
+	mux.HandleFunc("GET /api/products/{productID}", apiApp.GetProductByID)
 
 	server := &http.Server{
 		Addr:    ":" + port,
