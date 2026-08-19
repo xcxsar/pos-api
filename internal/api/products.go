@@ -219,3 +219,22 @@ func (api *API) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, res)
 }
+
+func (api *API) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	productID := r.PathValue("productID")
+	parsedID, err := strconv.ParseInt(productID, 10, 64)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	err = api.Cfg.Queries.DeleteProduct(r.Context(), parsedID)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not delete product "+productID)
+		return
+	}
+
+	respondWithJSON(w, http.StatusNoContent, struct{}{})
+}

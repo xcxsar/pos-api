@@ -59,6 +59,7 @@ func main() {
 	mux.HandleFunc("GET /api/products", apiApp.GetProducts)
 	mux.HandleFunc("GET /api/products/{productID}", apiApp.GetProductByID)
 	mux.HandleFunc("PATCH /api/products/{productID}", apiApp.UpdateProduct)
+	mux.HandleFunc("DELETE /api/products/{productID}", apiApp.DeleteProduct)
 
 	server := &http.Server{
 		Addr:    ":" + port,
