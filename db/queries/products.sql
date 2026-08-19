@@ -9,8 +9,9 @@ SELECT * FROM products;
 -- name: GetProductById :one
 SELECT * FROM products WHERE id = $1;
 
--- name: UpdateProduct :exec
-UPDATE products SET name = $1, price = $2, stock = $3, category_id = $4, updated_at = now();
+-- name: UpdateProduct :one
+UPDATE products SET name = $1, price = $2, stock = $3, category_id = $4, updated_at = now() WHERE id =$5
+RETURNING *;
 
 -- name: DeleteProduct :exec
 DELETE FROM products WHERE id = $1;

@@ -120,8 +120,9 @@ func (q *Queries) GetProducts(ctx context.Context) ([]Product, error) {
 	return items, nil
 }
 
-const updateProduct = `-- name: UpdateProduct :exec
-UPDATE products SET name = $1, price = $2, stock = $3, category_id = $4, updated_at = now()
+const updateProduct = `-- name: UpdateProduct :one
+UPDATE products SET name = $1, price = $2, stock = $3, category_id = $4, updated_at = now() WHERE id =$5
+RETURNING id, name, price, stock, category_id, created_at, updated_at
 `
 
 type UpdateProductParams struct {
@@ -129,14 +130,26 @@ type UpdateProductParams struct {
 	Price      string
 	Stock      int32
 	CategoryID sql.NullInt64
+	ID         int64
 }
 
-func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) error {
-	_, err := q.db.ExecContext(ctx, updateProduct,
+func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error) {
+	row := q.db.QueryRowContext(ctx, updateProduct,
 		arg.Name,
 		arg.Price,
 		arg.Stock,
 		arg.CategoryID,
+		arg.ID,
 	)
-	return err
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Price,
+		&i.Stock,
+		&i.CategoryID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

@@ -145,3 +145,77 @@ func (api *API) GetProductByID(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, res)
 }
+
+func (api *API) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	productID := r.PathValue("productID")
+	parsedID, err := strconv.ParseInt(productID, 10, 64)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	product, err := api.Cfg.Queries.GetProductById(r.Context(), parsedID)
+
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "product does not exist")
+		return
+	}
+
+	price, err := decimal.NewFromString(product.Price)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not parse product's price")
+		return
+	}
+
+	var categoryIDPtr *int64
+	if product.CategoryID.Valid {
+		categoryIDPtr = &product.CategoryID.Int64
+	}
+
+	params := productParams{
+		Name:       product.Name,
+		Price:      price,
+		Stock:      product.Stock,
+		CategoryID: categoryIDPtr,
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&params)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid request format")
+		return
+	}
+
+	var categoryID sql.NullInt64
+	if params.CategoryID != nil {
+		categoryID = sql.NullInt64{
+			Int64: *params.CategoryID,
+			Valid: true,
+		}
+	}
+
+	updatedProduct, err := api.Cfg.Queries.UpdateProduct(r.Context(), sqlc.UpdateProductParams{
+		Name:       params.Name,
+		Price:      params.Price.String(),
+		Stock:      params.Stock,
+		CategoryID: categoryID,
+		ID:         product.ID,
+	})
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not update product "+productID)
+		return
+	}
+
+	res, err := mapProduct(updatedProduct)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not parse product "+productID)
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, res)
+}
