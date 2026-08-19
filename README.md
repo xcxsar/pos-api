@@ -66,10 +66,16 @@ choco install make
 
 # Create Database
 
-1. Navigate to `internal/db`
+1. Create a `postgres_data` docker volume.
 
 ```bash
-cd internal/db
+docker volume create postgres_data
+```
+
+2. Navigate to `db`
+
+```bash
+cd db
 ```
 
 2. Create a `.env` file, use the template provided and fill in the actual values you want your database to use.
@@ -82,26 +88,28 @@ docker compose up -d
 
 # Apply Migrations
 
-1. Create a `.env` file at the project root, use the template provided and replace the mockup values with your actual credentials.
-
-2. Navigate to `internal/db/migrations`
-
-```bash
-cd internal/db/migrations
-```
-
-3. Run the desired migration command
-
 To update your database to the latest unsynced migration:
 
 ```bash
 make migrate-up
 ```
 
+To update your test database to the latest unsynced migration:
+
+```bash
+make test-migrate-up
+```
+
 To revert your database one migration at a time:
 
 ```bash
 make migrate-down
+```
+
+To revert your test database one migration at a time:
+
+```bash
+make test-migrate-down
 ```
 
 To check the current migration status:

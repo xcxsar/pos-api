@@ -12,6 +12,10 @@ if [ -z "$(ls -A "$DATA_DIR")" ]; then
     psql --username=postgres --host=/tmp -c "CREATE DATABASE \"$POSTGRES_DB\" OWNER \"$POSTGRES_USER\";"
     psql --username=postgres --host=/tmp -c "GRANT ALL PRIVILEGES ON DATABASE \"$POSTGRES_DB\" TO \"$POSTGRES_USER\";"
 
+    psql --username=postgres --host=/tmp -c "CREATE USER \"$POSTGRES_TEST_USER\" WITH PASSWORD '$POSTGRES_TEST_PASSWORD';"
+    psql --username=postgres --host=/tmp -c "CREATE DATABASE \"$POSTGRES_TEST_DB\" OWNER \"$POSTGRES_TEST_USER\";"
+    psql --username=postgres --host=/tmp -c "GRANT ALL PRIVILEGES ON DATABASE \"$POSTGRES_TEST_DB\" TO \"$POSTGRES_TEST_USER\";"
+
     echo "host all all 0.0.0.0/0 md5" >> "$DATA_DIR/pg_hba.conf"
     echo "listen_addresses='*'" >> "$DATA_DIR/postgresql.conf"
     echo "unix_socket_directories='/tmp'" >> "$DATA_DIR/postgresql.conf"
