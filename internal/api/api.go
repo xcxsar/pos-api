@@ -6,15 +6,18 @@ import (
 	"net/http"
 
 	"github.com/xcxsar/pos-api/internal/config"
+	"github.com/xcxsar/pos-api/internal/product"
 )
 
 type API struct {
-	Cfg *config.ApiConfig
+	Cfg            *config.ApiConfig
+	ProductService *product.Service
 }
 
-func NewAPI(cfg *config.ApiConfig) *API {
+func NewAPI(cfg *config.ApiConfig, prodSvc *product.Service) *API {
 	return &API{
-		Cfg: cfg,
+		Cfg:            cfg,
+		ProductService: prodSvc,
 	}
 }
 
