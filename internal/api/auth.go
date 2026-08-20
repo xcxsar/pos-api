@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/xcxsar/pos-api/internal/service"
+	"github.com/xcxsar/pos-api/internal/auth"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
@@ -48,20 +48,20 @@ func (api *API) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	match, err := service.MatchPassword(params.Password, user.HashedPassword)
+	match, err := auth.MatchPassword(params.Password, user.HashedPassword)
 
 	if err != nil || !match {
 		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
 		return
 	}
 
-	token, err := service.MakeJWT(user.ID, api.Cfg.JWTSecret, oneHour)
+	token, err := auth.MakeJWT(user.ID, api.Cfg.JWTSecret, oneHour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	refreshToken := service.MakeRefreshToken()
+	refreshToken := auth.MakeRefreshToken()
 	_, err = api.Cfg.Queries.CreateRefreshToken(r.Context(), sqlc.CreateRefreshTokenParams{
 		Token:  refreshToken,
 		UserID: user.ID,

@@ -13,7 +13,7 @@ import (
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
-type productParams struct {
+type ProductParams struct {
 	Name       string          `json:"name"`
 	Price      decimal.Decimal `json:"price"`
 	Stock      int32           `json:"stock"`
@@ -54,7 +54,7 @@ func mapProduct(u sqlc.Product) (product, error) {
 }
 
 func (api *API) CreateProduct(w http.ResponseWriter, r *http.Request) {
-	params := productParams{
+	params := ProductParams{
 		Name:       "Unnamed",
 		Price:      decimal.NewFromFloat(0.0),
 		Stock:      0,
@@ -174,7 +174,7 @@ func (api *API) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		categoryIDPtr = &product.CategoryID.Int64
 	}
 
-	params := productParams{
+	params := ProductParams{
 		Name:       product.Name,
 		Price:      price,
 		Stock:      product.Stock,

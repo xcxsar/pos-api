@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/xcxsar/pos-api/internal/service"
+	"github.com/xcxsar/pos-api/internal/auth"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
@@ -81,12 +81,12 @@ func (api *API) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !service.CheckPassword(params.Password) {
+	if !auth.CheckPassword(params.Password) {
 		respondWithError(w, http.StatusBadRequest, "password must be at least 8 characters long, contain at lest one uppercase letter, at leat one lowercase letter, at least one digit and at least one of the following special characters: @$!%*?&")
 		return
 	}
 
-	hashedPassword, err := service.HashPassword(params.Password)
+	hashedPassword, err := auth.HashPassword(params.Password)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not hash password")
@@ -130,14 +130,14 @@ func (api *API) GetUserByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
-	token, err := service.GetBearerToken(r.Header)
+	token, err := auth.GetBearerToken(r.Header)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "invalid token")
 		return
 	}
 
-	userID, err := service.ValidateJWT(token, api.Cfg.JWTSecret)
+	userID, err := auth.ValidateJWT(token, api.Cfg.JWTSecret)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "invalid token")
@@ -179,14 +179,14 @@ func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
-	token, err := service.GetBearerToken(r.Header)
+	token, err := auth.GetBearerToken(r.Header)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "invalid token")
 		return
 	}
 
-	userID, err := service.ValidateJWT(token, api.Cfg.JWTSecret)
+	userID, err := auth.ValidateJWT(token, api.Cfg.JWTSecret)
 
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "invalid token")
@@ -207,12 +207,12 @@ func (api *API) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !service.CheckPassword(param.Password) {
+	if !auth.CheckPassword(param.Password) {
 		respondWithError(w, http.StatusBadRequest, "password must be at least 8 characters long, contain at lest one uppercase letter, at leat one lowercase letter, at least one digit and at least one of the following special characters: @$!%*?&")
 		return
 	}
 
-	hashedPassword, err := service.HashPassword(param.Password)
+	hashedPassword, err := auth.HashPassword(param.Password)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not hash password")
