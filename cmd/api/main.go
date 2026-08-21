@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/xcxsar/pos-api/internal/api"
+	"github.com/xcxsar/pos-api/internal/auth"
 	"github.com/xcxsar/pos-api/internal/config"
 	"github.com/xcxsar/pos-api/internal/product"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
@@ -55,8 +56,9 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", apiApp.CreateUser)
 	mux.HandleFunc("GET /api/users/{userID}", apiApp.GetUserByID)
-	mux.HandleFunc("PATCH /api/user/email", apiApp.UpdateUserEmail)
-	mux.HandleFunc("PATCH /api/user/password", apiApp.UpdateUserPassword)
+	mux.HandleFunc("PUT /users/email", auth.AuthMiddleware(apiCfg.JWTSecret, apiApp.UpdateUserEmail))
+	mux.HandleFunc("PUT /users/password", auth.AuthMiddleware(apiCfg.JWTSecret, apiApp.UpdateUserPassword))
+
 	mux.HandleFunc("POST /api/login", apiApp.LogIn)
 
 	mux.HandleFunc("POST /api/products", apiApp.CreateProduct)

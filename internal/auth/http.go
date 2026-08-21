@@ -13,7 +13,7 @@ type contextKey string
 
 const UserIDKey contextKey = "userID"
 
-func AuthMiddleWare(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
+func AuthMiddleware(jwtSecret string, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := GetBearerToken(r.Header)
 		if err != nil {
