@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/xcxsar/pos-api/internal/auth"
-	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
 type userParams struct {
@@ -15,55 +14,19 @@ type userParams struct {
 	Password string `json:"password"`
 }
 
-type User struct {
+type userResponse struct {
 	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
 }
 
-func mapCreateUserRow(u sqlc.CreateUserRow) User {
-	return User{
-		ID:        u.ID,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-		Email:     u.Email,
-	}
-}
-
-func mapGetUserByIDRow(u sqlc.GetUserByIDRow) User {
-	return User{
-		ID:        u.ID,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-		Email:     u.Email,
-	}
-}
-
-func mapUpdateUserEmailRow(u sqlc.UpdateUserEmailRow) User {
-	return User{
-		ID:        u.ID,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-		Email:     u.Email,
-	}
-}
-
-func mapUpdateUserPasswordRow(u sqlc.UpdateUserPasswordRow) User {
-	return User{
-		ID:        u.ID,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-		Email:     u.Email,
-	}
-}
-
-func mapSQLCUser(u sqlc.User) User {
-	return User{
-		ID:        u.ID,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-		Email:     u.Email,
+func mapUserResponse(id uuid.UUID, created, updated time.Time, email string) userResponse {
+	return userResponse{
+		ID:        id,
+		CreatedAt: created,
+		UpdatedAt: updated,
+		Email:     email,
 	}
 }
 
@@ -76,35 +39,13 @@ func (api *API) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if params.Email == "" || params.Password == "" {
-		respondWithError(w, http.StatusBadRequest, "email and password are required")
-		return
-	}
-
-	if !auth.CheckPassword(params.Password) {
-		respondWithError(w, http.StatusBadRequest, "password must be at least 8 characters long, contain at lest one uppercase letter, at leat one lowercase letter, at least one digit and at least one of the following special characters: @$!%*?&")
-		return
-	}
-
-	hashedPassword, err := auth.HashPassword(params.Password)
-
+	dbUser, err := api.UserService.Create(r.Context(), params.Email, params.Password)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not hash password")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	user, err := api.Cfg.Queries.CreateUser(r.Context(), sqlc.CreateUserParams{
-		Email:          params.Email,
-		HashedPassword: hashedPassword,
-	})
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not create user")
-		return
-	}
-
-	res := mapCreateUserRow(user)
-
+	res := mapUserResponse(dbUser.ID, dbUser.CreatedAt, dbUser.UpdatedAt, dbUser.Email)
 	respondWithJSON(w, http.StatusCreated, res)
 }
 
@@ -117,119 +58,68 @@ func (api *API) GetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := api.Cfg.Queries.GetUserByID(r.Context(), parsedID)
-
+	dbUser, err := api.UserService.GetByID(r.Context(), parsedID)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "no user found")
 		return
 	}
 
-	res := mapGetUserByIDRow(user)
-
-	respondWithJSON(w, http.StatusOK, res)
+	res := mapUserResponse(dbUser.ID, dbUser.CreatedAt, dbUser.UpdatedAt, dbUser.Email)
+	respondWithJSON(w, http.StatusCreated, res)
 }
 
 func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
-	token, err := auth.GetBearerToken(r.Header)
-
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "invalid token")
+	userID, ok := auth.GetUserIDFromContext(r.Context())
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	userID, err := auth.ValidateJWT(token, api.Cfg.JWTSecret)
-
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "invalid token")
-		return
-	}
-
-	type params struct {
+	var param struct {
 		Email string `json:"email"`
 	}
 
-	var param params
-
 	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&param)
-
+	err := decoder.Decode(&param)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "invalid request format")
 		return
 	}
 
-	if param.Email == "" {
-		respondWithError(w, http.StatusBadRequest, "email is required")
-		return
-	}
-
-	user, err := api.Cfg.Queries.UpdateUserEmail(r.Context(), sqlc.UpdateUserEmailParams{
-		Email: param.Email,
-		ID:    userID,
-	})
-
+	dbUser, err := api.UserService.UpdateEmail(r.Context(), userID, param.Email)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not update email")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	res := mapUpdateUserEmailRow(user)
-
-	respondWithJSON(w, http.StatusOK, res)
+	res := mapUserResponse(dbUser.ID, dbUser.CreatedAt, dbUser.UpdatedAt, dbUser.Email)
+	respondWithJSON(w, http.StatusCreated, res)
 }
 
 func (api *API) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
-	token, err := auth.GetBearerToken(r.Header)
-
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "invalid token")
+	userID, ok := auth.GetUserIDFromContext(r.Context())
+	if !ok {
+		respondWithError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	userID, err := auth.ValidateJWT(token, api.Cfg.JWTSecret)
-
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "invalid token")
-		return
-	}
-
-	type params struct {
+	var param struct {
 		Password string `json:"password"`
 	}
 
-	var param params
-
 	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&param)
-
+	err := decoder.Decode(&param)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "invalid request format")
 		return
 	}
 
-	if !auth.CheckPassword(param.Password) {
-		respondWithError(w, http.StatusBadRequest, "password must be at least 8 characters long, contain at lest one uppercase letter, at leat one lowercase letter, at least one digit and at least one of the following special characters: @$!%*?&")
-		return
-	}
-
-	hashedPassword, err := auth.HashPassword(param.Password)
-
+	dbUser, err := api.UserService.UpdatePassword(r.Context(), userID, param.Password)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not hash password")
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	user, err := api.Cfg.Queries.UpdateUserPassword(r.Context(), sqlc.UpdateUserPasswordParams{
-		HashedPassword: hashedPassword,
-		ID:             userID,
-	})
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not update password")
-		return
-	}
-
-	res := mapUpdateUserPasswordRow(user)
-
-	respondWithJSON(w, http.StatusOK, res)
+	res := mapUserResponse(dbUser.ID, dbUser.CreatedAt, dbUser.UpdatedAt, dbUser.Email)
+	respondWithJSON(w, http.StatusCreated, res)
 }

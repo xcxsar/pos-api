@@ -12,6 +12,7 @@ import (
 	"github.com/xcxsar/pos-api/internal/config"
 	"github.com/xcxsar/pos-api/internal/product"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
+	"github.com/xcxsar/pos-api/internal/user"
 )
 
 func main() {
@@ -45,9 +46,10 @@ func main() {
 		JWTSecret: jwtSecret,
 	}
 
-	prodSvc := product.NewService(dbQueries)
+	productSvc := product.NewService(dbQueries)
+	userSvc := user.NewService(dbQueries)
 
-	apiApp := api.NewAPI(apiCfg, prodSvc)
+	apiApp := api.NewAPI(apiCfg, productSvc, userSvc)
 
 	mux := http.NewServeMux()
 

@@ -14,7 +14,7 @@ import (
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
-type ProductParams struct {
+type productParams struct {
 	Name       string          `json:"name"`
 	Price      decimal.Decimal `json:"price"`
 	Stock      int32           `json:"stock"`
@@ -31,7 +31,7 @@ type productResponse struct {
 	UpdatedAt  time.Time       `json:"updated_at"`
 }
 
-func mapProduct(u sqlc.Product) (productResponse, error) {
+func mapProductResponse(u sqlc.Product) (productResponse, error) {
 	priceDecimal, err := decimal.NewFromString(u.Price)
 	if err != nil {
 		return productResponse{}, fmt.Errorf("invalid price format: %w", err)
@@ -55,7 +55,7 @@ func mapProduct(u sqlc.Product) (productResponse, error) {
 }
 
 func (api *API) CreateProduct(w http.ResponseWriter, r *http.Request) {
-	var params ProductParams
+	var params productParams
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
@@ -86,7 +86,7 @@ func (api *API) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _ := mapProduct(dbProduct)
+	res, _ := mapProductResponse(dbProduct)
 	respondWithJSON(w, http.StatusCreated, res)
 }
 
@@ -100,7 +100,7 @@ func (api *API) GetProducts(w http.ResponseWriter, r *http.Request) {
 	var res []productResponse
 
 	for _, p := range products {
-		mapped, err := mapProduct(p)
+		mapped, err := mapProductResponse(p)
 		if err != nil {
 			log.Printf("Skipping product mapping error on ID %d: %v", p.ID, err)
 			continue
@@ -127,7 +127,7 @@ func (api *API) GetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _ := mapProduct(dbProduct)
+	res, _ := mapProductResponse(dbProduct)
 	respondWithJSON(w, http.StatusOK, res)
 }
 
@@ -146,7 +146,7 @@ func (api *API) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var params ProductParams
+	var params productParams
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		respondWithError(w, http.StatusBadRequest, "invalid parameters format")
 		return
@@ -170,7 +170,7 @@ func (api *API) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _ := mapProduct(updated)
+	res, _ := mapProductResponse(updated)
 	respondWithJSON(w, http.StatusOK, res)
 }
 
