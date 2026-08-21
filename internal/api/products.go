@@ -81,11 +81,6 @@ func (api *API) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "could not create product")
-		return
-	}
-
 	res, _ := mapProductResponse(dbProduct)
 	respondWithJSON(w, http.StatusCreated, res)
 }
