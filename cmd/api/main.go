@@ -49,15 +49,16 @@ func main() {
 
 	productSvc := product.NewService(dbQueries)
 	userSvc := user.NewService(dbQueries)
+	authSvc := auth.NewService(dbQueries, jwtSecret)
 
-	apiApp := api.NewAPI(apiCfg, productSvc, userSvc)
+	apiApp := api.NewAPI(apiCfg, productSvc, userSvc, authSvc)
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /api/users", apiApp.CreateUser)
 	mux.HandleFunc("GET /api/users/{userID}", apiApp.GetUserByID)
-	mux.HandleFunc("PUT /users/email", auth.AuthMiddleware(apiCfg.JWTSecret, apiApp.UpdateUserEmail))
-	mux.HandleFunc("PUT /users/password", auth.AuthMiddleware(apiCfg.JWTSecret, apiApp.UpdateUserPassword))
+	mux.HandleFunc("PUT /api/users/email", auth.AuthMiddleware(apiCfg.JWTSecret, apiApp.UpdateUserEmail))
+	mux.HandleFunc("PUT /api/users/password", auth.AuthMiddleware(apiCfg.JWTSecret, apiApp.UpdateUserPassword))
 
 	mux.HandleFunc("POST /api/login", apiApp.LogIn)
 

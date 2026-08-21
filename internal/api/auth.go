@@ -3,77 +3,38 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"time"
-
-	"github.com/xcxsar/pos-api/internal/auth"
-	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
 type LoginRes struct {
-	User
+	userResponse
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-func mapLoginRes(u sqlc.User, token, refreshToken string) LoginRes {
-	return LoginRes{
-		User:         mapSQLCUser(u),
+func (api *API) LogIn(w http.ResponseWriter, r *http.Request) {
+	var params userParams
+
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid request format")
+		return
+	}
+
+	user, token, refreshToken, err := api.AuthService.Login(r.Context(), params.Email, params.Password)
+
+	if err != nil {
+		if err.Error() == "incorrect email or password" {
+			respondWithError(w, http.StatusUnauthorized, err.Error())
+		} else {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	res := LoginRes{
+		userResponse: mapUserResponse(user.ID, user.CreatedAt, user.UpdatedAt, user.Email),
 		Token:        token,
 		RefreshToken: refreshToken,
 	}
-}
-
-func (api *API) LogIn(w http.ResponseWriter, r *http.Request) {
-	const oneHour = time.Duration(3600) * time.Second
-
-	var params userParams
-
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&params)
-
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if params.Email == "" || params.Password == "" {
-		respondWithError(w, http.StatusBadRequest, "Email or Hashed Password is required")
-		return
-	}
-
-	user, err := api.Cfg.Queries.GetUserByEmail(r.Context(), params.Email)
-
-	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
-		return
-	}
-
-	match, err := auth.MatchPassword(params.Password, user.HashedPassword)
-
-	if err != nil || !match {
-		respondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
-		return
-	}
-
-	token, err := auth.MakeJWT(user.ID, api.Cfg.JWTSecret, oneHour)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	refreshToken := auth.MakeRefreshToken()
-	_, err = api.Cfg.Queries.CreateRefreshToken(r.Context(), sqlc.CreateRefreshTokenParams{
-		Token:  refreshToken,
-		UserID: user.ID,
-	})
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	res := mapLoginRes(user, token, refreshToken)
-	res.Token = token
 
 	respondWithJSON(w, http.StatusOK, res)
 }
