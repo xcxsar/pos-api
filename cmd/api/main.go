@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/xcxsar/pos-api/internal/api"
 	"github.com/xcxsar/pos-api/internal/auth"
+	"github.com/xcxsar/pos-api/internal/category"
 	"github.com/xcxsar/pos-api/internal/config"
 	"github.com/xcxsar/pos-api/internal/product"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
@@ -50,8 +51,9 @@ func main() {
 	productSvc := product.NewService(dbQueries)
 	userSvc := user.NewService(dbQueries)
 	authSvc := auth.NewService(dbQueries, jwtSecret)
+	categorySvc := category.NewService(dbQueries)
 
-	apiApp := api.NewAPI(apiCfg, productSvc, userSvc, authSvc)
+	apiApp := api.NewAPI(apiCfg, productSvc, userSvc, authSvc, categorySvc)
 
 	mux := http.NewServeMux()
 
@@ -67,6 +69,8 @@ func main() {
 	mux.HandleFunc("GET /api/products/{productID}", apiApp.GetProductByID)
 	mux.HandleFunc("PATCH /api/products/{productID}", apiApp.UpdateProduct)
 	mux.HandleFunc("DELETE /api/products/{productID}", apiApp.DeleteProduct)
+
+	mux.HandleFunc("POST /api/categories", apiApp.CreateCategory)
 
 	server := &http.Server{
 		Addr:    ":" + port,
