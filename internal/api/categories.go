@@ -52,3 +52,20 @@ func (api *API) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	res := mapCategoryResponse(dbCategory)
 	respondWithJSON(w, http.StatusCreated, res)
 }
+
+func (api *API) GetCategories(w http.ResponseWriter, r *http.Request) {
+	categories, err := api.CategoryService.List(r.Context())
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "could not retrieve categories")
+	}
+
+	var res []categoryResponse
+
+	for _, c := range categories {
+		mapped := mapCategoryResponse(c)
+		res = append(res, mapped)
+	}
+
+	respondWithJSON(w, http.StatusOK, res)
+}

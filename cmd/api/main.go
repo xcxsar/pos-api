@@ -71,6 +71,7 @@ func main() {
 	mux.HandleFunc("DELETE /api/products/{productID}", apiApp.DeleteProduct)
 
 	mux.HandleFunc("POST /api/categories", apiApp.CreateCategory)
+	mux.HandleFunc("GET /api/categories", apiApp.GetCategories)
 
 	server := &http.Server{
 		Addr:    ":" + port,
