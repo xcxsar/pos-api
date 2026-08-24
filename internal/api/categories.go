@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/xcxsar/pos-api/internal/category"
@@ -67,5 +68,25 @@ func (api *API) GetCategories(w http.ResponseWriter, r *http.Request) {
 		res = append(res, mapped)
 	}
 
+	respondWithJSON(w, http.StatusOK, res)
+}
+
+func (api *API) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
+	CategoryID := r.PathValue("categoryID")
+	parsedID, err := strconv.ParseInt(CategoryID, 10, 64)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	dbCategory, err := api.CategoryService.GetByID(r.Context(), parsedID)
+
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "requested product does not exist")
+		return
+	}
+
+	res := mapCategoryResponse(dbCategory)
 	respondWithJSON(w, http.StatusOK, res)
 }

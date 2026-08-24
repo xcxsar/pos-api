@@ -72,6 +72,7 @@ func main() {
 
 	mux.HandleFunc("POST /api/categories", apiApp.CreateCategory)
 	mux.HandleFunc("GET /api/categories", apiApp.GetCategories)
+	mux.HandleFunc("GET /api/categories/{categoryID}", apiApp.GetCategoryByID)
 
 	server := &http.Server{
 		Addr:    ":" + port,
