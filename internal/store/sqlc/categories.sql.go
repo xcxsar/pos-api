@@ -121,12 +121,17 @@ func (q *Queries) GetProductsByCategory(ctx context.Context, categoryID sql.Null
 }
 
 const updateCategory = `-- name: UpdateCategory :one
-UPDATE categories SET name = $1, updated_at = now()
+UPDATE categories SET name = $1, updated_at = now() WHERE id = $2
 RETURNING id, name, created_at, updated_at
 `
 
-func (q *Queries) UpdateCategory(ctx context.Context, name string) (Category, error) {
-	row := q.db.QueryRowContext(ctx, updateCategory, name)
+type UpdateCategoryParams struct {
+	Name string
+	ID   int64
+}
+
+func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {
+	row := q.db.QueryRowContext(ctx, updateCategory, arg.Name, arg.ID)
 	var i Category
 	err := row.Scan(
 		&i.ID,

@@ -10,7 +10,7 @@ SELECT * FROM categories;
 SELECT * FROM categories WHERE id = $1;
 
 -- name: UpdateCategory :one
-UPDATE categories SET name = $1, updated_at = now()
+UPDATE categories SET name = $1, updated_at = now() WHERE id = $2
 RETURNING *;
 
 -- name: DeleteCategory :exec
