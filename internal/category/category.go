@@ -7,6 +7,15 @@ var (
 	ErrInvalidCharacters = errors.New("category name cannot contain numbers, spaces or special characters")
 )
 
+type CreateDTO struct {
+	Name string
+}
+
+type UpdateDTO struct {
+	ID   int64
+	Name string
+}
+
 func validateName(s string) bool {
 	if len(s) == 0 {
 		return false
