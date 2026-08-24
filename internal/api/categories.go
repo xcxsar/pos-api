@@ -80,14 +80,14 @@ func (api *API) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
 	parsedID, err := strconv.ParseInt(CategoryID, 10, 64)
 
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "invalid product ID")
+		respondWithError(w, http.StatusBadRequest, "invalid category ID")
 		return
 	}
 
 	dbCategory, err := api.CategoryService.GetByID(r.Context(), parsedID)
 
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "requested product does not exist")
+		respondWithError(w, http.StatusNotFound, "requested category does not exist")
 		return
 	}
 
@@ -100,7 +100,7 @@ func (api *API) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	parsedID, err := strconv.ParseInt(CategoryID, 10, 64)
 
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "invalid product ID")
+		respondWithError(w, http.StatusBadRequest, "invalid category ID")
 		return
 	}
 
@@ -133,4 +133,19 @@ func (api *API) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 
 	res := mapCategoryResponse(updated)
 	respondWithJSON(w, http.StatusOK, res)
+}
+
+func (api *API) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	parsedID, err := strconv.ParseInt(r.PathValue("categoryID"), 10, 64)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid target identifier formatting")
+		return
+	}
+
+	if err := api.CategoryService.Delete(r.Context(), parsedID); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "unable to wipe category entry database records")
+		return
+	}
+
+	respondWithJSON(w, http.StatusNoContent, struct{}{})
 }
