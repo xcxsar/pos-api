@@ -40,7 +40,11 @@ func (api *API) CreateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbCategory, err := api.CategoryService.Create(r.Context(), params.Name)
+	dto := category.CreateDTO{
+		Name: params.Name,
+	}
+
+	dbCategory, err := api.CategoryService.Create(r.Context(), dto)
 	if err != nil {
 		if errors.Is(err, category.ErrBlankName) || errors.Is(err, category.ErrInvalidCharacters) {
 			respondWithError(w, http.StatusBadRequest, err.Error())
@@ -88,5 +92,45 @@ func (api *API) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := mapCategoryResponse(dbCategory)
+	respondWithJSON(w, http.StatusOK, res)
+}
+
+func (api *API) UpdateCategory(w http.ResponseWriter, r *http.Request) {
+	CategoryID := r.PathValue("categoryID")
+	parsedID, err := strconv.ParseInt(CategoryID, 10, 64)
+
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid product ID")
+		return
+	}
+
+	_, err = api.CategoryService.GetByID(r.Context(), parsedID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "targeted category does not exist")
+		return
+	}
+
+	var params categoryParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		respondWithError(w, http.StatusBadRequest, "invalid request format")
+		return
+	}
+
+	dto := category.UpdateDTO{
+		ID:   parsedID,
+		Name: params.Name,
+	}
+
+	updated, err := api.CategoryService.Update(r.Context(), dto)
+	if err != nil {
+		if errors.Is(err, category.ErrBlankName) || errors.Is(err, category.ErrInvalidCharacters) {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "failed updating infrastructure records")
+		return
+	}
+
+	res := mapCategoryResponse(updated)
 	respondWithJSON(w, http.StatusOK, res)
 }

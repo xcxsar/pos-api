@@ -67,12 +67,13 @@ func main() {
 	mux.HandleFunc("POST /api/products", apiApp.CreateProduct)
 	mux.HandleFunc("GET /api/products", apiApp.GetProducts)
 	mux.HandleFunc("GET /api/products/{productID}", apiApp.GetProductByID)
-	mux.HandleFunc("PATCH /api/products/{productID}", apiApp.UpdateProduct)
+	mux.HandleFunc("PUT /api/products/{productID}", apiApp.UpdateProduct)
 	mux.HandleFunc("DELETE /api/products/{productID}", apiApp.DeleteProduct)
 
 	mux.HandleFunc("POST /api/categories", apiApp.CreateCategory)
 	mux.HandleFunc("GET /api/categories", apiApp.GetCategories)
 	mux.HandleFunc("GET /api/categories/{categoryID}", apiApp.GetCategoryByID)
+	mux.HandleFunc("PUT /api/categories/{categoryID}", apiApp.UpdateCategory)
 
 	server := &http.Server{
 		Addr:    ":" + port,
