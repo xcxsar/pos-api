@@ -14,39 +14,73 @@ func NewService(q *sqlc.Queries) *Service {
 	return &Service{queries: q}
 }
 
-func (s *Service) Create(ctx context.Context, dto CreateDTO) (sqlc.Category, error) {
+func toResponse(c sqlc.Category) Response {
+	return Response{
+		ID:        c.ID,
+		Name:      c.Name,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
+}
+
+func (s *Service) Create(ctx context.Context, dto CreateDTO) (Response, error) {
 	if dto.Name == "" {
-		return sqlc.Category{}, ErrBlankName
+		return Response{}, ErrBlankName
 	}
 
 	if !validateName(dto.Name) {
-		return sqlc.Category{}, ErrInvalidCharacters
+		return Response{}, ErrInvalidCharacters
 	}
 
-	return s.queries.CreateCategory(ctx, dto.Name)
+	c, err := s.queries.CreateCategory(ctx, dto.Name)
+	if err != nil {
+		return Response{}, err
+	}
+
+	return toResponse(c), nil
 }
 
-func (s *Service) List(ctx context.Context) ([]sqlc.Category, error) {
-	return s.queries.GetCategories(ctx)
+func (s *Service) List(ctx context.Context) ([]Response, error) {
+	categories, err := s.queries.GetCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []Response
+	for _, c := range categories {
+		res = append(res, toResponse(c))
+	}
+
+	return res, nil
 }
 
-func (s *Service) GetByID(ctx context.Context, id int64) (sqlc.Category, error) {
-	return s.queries.GetCategoryByID(ctx, id)
+func (s *Service) GetByID(ctx context.Context, id int64) (Response, error) {
+	c, err := s.queries.GetCategoryByID(ctx, id)
+	if err != nil {
+		return Response{}, err
+	}
+
+	return toResponse(c), nil
 }
 
-func (s *Service) Update(ctx context.Context, dto UpdateDTO) (sqlc.Category, error) {
+func (s *Service) Update(ctx context.Context, dto UpdateDTO) (Response, error) {
 	if dto.Name == "" {
-		return sqlc.Category{}, ErrBlankName
+		return Response{}, ErrBlankName
 	}
 
 	if !validateName(dto.Name) {
-		return sqlc.Category{}, ErrInvalidCharacters
+		return Response{}, ErrInvalidCharacters
 	}
 
-	return s.queries.UpdateCategory(ctx, sqlc.UpdateCategoryParams{
+	c, err := s.queries.UpdateCategory(ctx, sqlc.UpdateCategoryParams{
 		ID:   dto.ID,
 		Name: dto.Name,
 	})
+	if err != nil {
+		return Response{}, err
+	}
+
+	return toResponse(c), nil
 }
 
 func (s *Service) Delete(ctx context.Context, id int64) error {

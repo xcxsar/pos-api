@@ -5,29 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/xcxsar/pos-api/internal/category"
-	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
 type categoryParams struct {
 	Name string `json:"name"`
-}
-type categoryResponse struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func mapCategoryResponse(u sqlc.Category) categoryResponse {
-	return categoryResponse{
-		ID:        u.ID,
-		Name:      u.Name,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
-	}
 }
 
 func (api *API) CreateCategory(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +27,7 @@ func (api *API) CreateCategory(w http.ResponseWriter, r *http.Request) {
 		Name: params.Name,
 	}
 
-	dbCategory, err := api.CategoryService.Create(r.Context(), dto)
+	res, err := api.CategoryService.Create(r.Context(), dto)
 	if err != nil {
 		if errors.Is(err, category.ErrBlankName) || errors.Is(err, category.ErrInvalidCharacters) {
 			respondWithError(w, http.StatusBadRequest, err.Error())
@@ -54,22 +37,15 @@ func (api *API) CreateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := mapCategoryResponse(dbCategory)
 	respondWithJSON(w, http.StatusCreated, res)
 }
 
 func (api *API) GetCategories(w http.ResponseWriter, r *http.Request) {
-	categories, err := api.CategoryService.List(r.Context())
+	res, err := api.CategoryService.List(r.Context())
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "could not retrieve categories")
-	}
-
-	var res []categoryResponse
-
-	for _, c := range categories {
-		mapped := mapCategoryResponse(c)
-		res = append(res, mapped)
+		return
 	}
 
 	respondWithJSON(w, http.StatusOK, res)
@@ -84,14 +60,13 @@ func (api *API) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbCategory, err := api.CategoryService.GetByID(r.Context(), parsedID)
+	res, err := api.CategoryService.GetByID(r.Context(), parsedID)
 
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "requested category does not exist")
 		return
 	}
 
-	res := mapCategoryResponse(dbCategory)
 	respondWithJSON(w, http.StatusOK, res)
 }
 
@@ -121,7 +96,7 @@ func (api *API) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		Name: params.Name,
 	}
 
-	updated, err := api.CategoryService.Update(r.Context(), dto)
+	res, err := api.CategoryService.Update(r.Context(), dto)
 	if err != nil {
 		if errors.Is(err, category.ErrBlankName) || errors.Is(err, category.ErrInvalidCharacters) {
 			respondWithError(w, http.StatusBadRequest, err.Error())
@@ -131,7 +106,6 @@ func (api *API) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := mapCategoryResponse(updated)
 	respondWithJSON(w, http.StatusOK, res)
 }
 
