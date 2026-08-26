@@ -3,10 +3,12 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/xcxsar/pos-api/internal/user"
 )
 
 type LoginRes struct {
-	userResponse
+	user.Response
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
@@ -19,7 +21,7 @@ func (api *API) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, token, refreshToken, err := api.AuthService.Login(r.Context(), params.Email, params.Password)
+	dbUser, token, refreshToken, err := api.AuthService.Login(r.Context(), params.Email, params.Password)
 
 	if err != nil {
 		if err.Error() == "incorrect email or password" {
@@ -31,7 +33,12 @@ func (api *API) LogIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := LoginRes{
-		userResponse: mapUserResponse(user.ID, user.CreatedAt, user.UpdatedAt, user.Email),
+		Response: user.Response{
+			ID:        dbUser.ID,
+			Email:     dbUser.Email,
+			CreatedAt: dbUser.CreatedAt,
+			UpdatedAt: dbUser.UpdatedAt,
+		},
 		Token:        token,
 		RefreshToken: refreshToken,
 	}
