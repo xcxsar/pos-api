@@ -9,6 +9,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
+	"github.com/xcxsar/pos-api/internal/password"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
 
@@ -29,7 +30,7 @@ func newTestService(t *testing.T) (*Service, sqlmock.Sqlmock) {
 
 func hashedPassword(t *testing.T) string {
 	t.Helper()
-	hash, err := HashPassword("TestPass1!")
+	hash, err := password.Hash("TestPass1!")
 	if err != nil {
 		t.Fatalf("failed to hash test password: %v", err)
 	}
@@ -51,18 +52,18 @@ func TestLogin_Success(t *testing.T) {
 		AddRow("abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890", now, now, userID, now.Add(60*24*time.Hour), nil)
 	mock.ExpectQuery(`INSERT INTO refresh_tokens`).WillReturnRows(refreshRows)
 
-	user, token, refreshToken, err := svc.Login(context.Background(), "user@example.com", "TestPass1!")
+	res, err := svc.Login(context.Background(), "user@example.com", "TestPass1!")
 	if err != nil {
 		t.Fatalf("Login() unexpected error: %v", err)
 	}
-	if user.Email != "user@example.com" {
-		t.Errorf("user.Email = %q, want %q", user.Email, "user@example.com")
+	if res.Email != "user@example.com" {
+		t.Errorf("res.Email = %q, want %q", res.Email, "user@example.com")
 	}
-	if !strings.Contains(token, ".") {
+	if !strings.Contains(res.Token, ".") {
 		t.Error("expected a valid JWT token")
 	}
-	if len(refreshToken) != 64 {
-		t.Errorf("refreshToken length = %d, want 64", len(refreshToken))
+	if len(res.RefreshToken) != 64 {
+		t.Errorf("refreshToken length = %d, want 64", len(res.RefreshToken))
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unmet expectations: %v", err)
@@ -72,7 +73,7 @@ func TestLogin_Success(t *testing.T) {
 func TestLogin_EmptyEmail(t *testing.T) {
 	svc, _ := newTestService(t)
 
-	_, _, _, err := svc.Login(context.Background(), "", "TestPass1!")
+	_, err := svc.Login(context.Background(), "", "TestPass1!")
 	if err == nil {
 		t.Fatal("expected error for empty email, got nil")
 	}
@@ -84,7 +85,7 @@ func TestLogin_EmptyEmail(t *testing.T) {
 func TestLogin_EmptyPassword(t *testing.T) {
 	svc, _ := newTestService(t)
 
-	_, _, _, err := svc.Login(context.Background(), "user@example.com", "")
+	_, err := svc.Login(context.Background(), "user@example.com", "")
 	if err == nil {
 		t.Fatal("expected error for empty password, got nil")
 	}
@@ -96,7 +97,7 @@ func TestLogin_EmptyPassword(t *testing.T) {
 func TestLogin_BothEmpty(t *testing.T) {
 	svc, _ := newTestService(t)
 
-	_, _, _, err := svc.Login(context.Background(), "", "")
+	_, err := svc.Login(context.Background(), "", "")
 	if err == nil {
 		t.Fatal("expected error for both empty, got nil")
 	}
@@ -112,7 +113,7 @@ func TestLogin_UserNotFound(t *testing.T) {
 		WithArgs("nobody@example.com").
 		WillReturnError(sql.ErrNoRows)
 
-	_, _, _, err := svc.Login(context.Background(), "nobody@example.com", "TestPass1!")
+	_, err := svc.Login(context.Background(), "nobody@example.com", "TestPass1!")
 	if err == nil {
 		t.Fatal("expected error for user not found, got nil")
 	}
@@ -135,7 +136,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 		AddRow(userID, now, now, "user@example.com", hash)
 	mock.ExpectQuery(`SELECT .+ FROM users WHERE email`).WithArgs("user@example.com").WillReturnRows(rows)
 
-	_, _, _, err := svc.Login(context.Background(), "user@example.com", "WrongPass9!")
+	_, err := svc.Login(context.Background(), "user@example.com", "WrongPass9!")
 	if err == nil {
 		t.Fatal("expected error for wrong password, got nil")
 	}
@@ -160,7 +161,7 @@ func TestLogin_CreateRefreshTokenFails(t *testing.T) {
 
 	mock.ExpectQuery(`INSERT INTO refresh_tokens`).WillReturnError(sql.ErrConnDone)
 
-	_, _, _, err := svc.Login(context.Background(), "user@example.com", "TestPass1!")
+	_, err := svc.Login(context.Background(), "user@example.com", "TestPass1!")
 	if err == nil {
 		t.Fatal("expected error when CreateRefreshToken fails, got nil")
 	}

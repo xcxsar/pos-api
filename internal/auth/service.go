@@ -5,7 +5,16 @@ import (
 	"errors"
 	"time"
 
+	"github.com/xcxsar/pos-api/internal/password"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
+	"github.com/xcxsar/pos-api/internal/user"
+)
+
+var (
+	ErrRequiredCredentials = errors.New("email and password are required")
+	ErrInvalidCredentials  = errors.New("incorrect email or password")
+	ErrTokenGeneration     = errors.New("could not generate access token")
+	ErrRefreshTokenSave    = errors.New("could not save refresh token")
 )
 
 type Service struct {
@@ -17,35 +26,52 @@ func NewService(queries *sqlc.Queries, jwtSecret string) *Service {
 	return &Service{queries: queries, jwtSecret: jwtSecret}
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (sqlc.User, string, string, error) {
-	if email == "" || password == "" {
-		return sqlc.User{}, "", "", errors.New("email and password are required")
+type LoginResponse struct {
+	user.Response
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (s *Service) Login(ctx context.Context, email, pwd string) (LoginResponse, error) {
+	if email == "" || pwd == "" {
+		return LoginResponse{}, ErrRequiredCredentials
 	}
 
-	user, err := s.queries.GetUserByEmail(ctx, email)
+	dbUser, err := s.queries.GetUserByEmail(ctx, email)
 	if err != nil {
-		return sqlc.User{}, "", "", errors.New("incorrect email or password")
+		return LoginResponse{}, ErrInvalidCredentials
 	}
 
-	match, err := MatchPassword(password, user.HashedPassword)
+	match, err := password.Match(pwd, dbUser.HashedPassword)
 	if err != nil || !match {
-		return sqlc.User{}, "", "", errors.New("incorrect email or password")
+		return LoginResponse{}, ErrInvalidCredentials
 	}
 
 	const oneHour = time.Duration(3600) * time.Second
-	token, err := MakeJWT(user.ID, s.jwtSecret, oneHour)
+	token, err := MakeJWT(dbUser.ID, s.jwtSecret, oneHour)
 	if err != nil {
-		return sqlc.User{}, "", "", errors.New("could not generate access token")
+		return LoginResponse{}, ErrTokenGeneration
 	}
 
 	refreshToken := MakeRefreshToken()
 	_, err = s.queries.CreateRefreshToken(ctx, sqlc.CreateRefreshTokenParams{
 		Token:  refreshToken,
-		UserID: user.ID,
+		UserID: dbUser.ID,
 	})
 	if err != nil {
-		return sqlc.User{}, "", "", errors.New("could not save refresh token")
+		return LoginResponse{}, ErrRefreshTokenSave
 	}
 
-	return user, token, refreshToken, nil
+	res := LoginResponse{
+		Response: user.Response{
+			ID:        dbUser.ID,
+			Email:     dbUser.Email,
+			CreatedAt: dbUser.CreatedAt,
+			UpdatedAt: dbUser.UpdatedAt,
+		},
+		Token:        token,
+		RefreshToken: refreshToken,
+	}
+
+	return res, nil
 }
