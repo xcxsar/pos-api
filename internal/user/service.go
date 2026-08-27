@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/xcxsar/pos-api/internal/password"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
@@ -37,7 +38,11 @@ func (s *Service) Create(ctx context.Context, dto CreateDTO) (Response, error) {
 		HashedPassword: hashedPassword,
 	})
 	if err != nil {
-		return Response{}, err
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return Response{}, ErrEmailAlreadyExists
+		}
+		return Response{}, ErrCouldNotSave
 	}
 
 	return toResponse(row.ID, row.Email, row.CreatedAt, row.UpdatedAt), nil
@@ -62,7 +67,11 @@ func (s *Service) UpdateEmail(ctx context.Context, dto UpdateEmailDTO) (Response
 		ID:    dto.ID,
 	})
 	if err != nil {
-		return Response{}, err
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return Response{}, ErrEmailAlreadyExists
+		}
+		return Response{}, ErrCouldNotUpdateEmail
 	}
 
 	return toResponse(row.ID, row.Email, row.CreatedAt, row.UpdatedAt), nil
@@ -83,7 +92,7 @@ func (s *Service) UpdatePassword(ctx context.Context, dto UpdatePasswordDTO) (Re
 		ID:             dto.ID,
 	})
 	if err != nil {
-		return Response{}, err
+		return Response{}, ErrCouldNotUpdatePass
 	}
 
 	return toResponse(row.ID, row.Email, row.CreatedAt, row.UpdatedAt), nil

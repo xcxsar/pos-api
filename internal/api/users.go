@@ -2,10 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/xcxsar/pos-api/internal/auth"
+	"github.com/xcxsar/pos-api/internal/password"
 	"github.com/xcxsar/pos-api/internal/user"
 )
 
@@ -26,7 +28,14 @@ func (api *API) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Password: params.Password,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		switch {
+		case errors.Is(err, user.ErrRequiredCredentials), errors.Is(err, password.ErrInvalidPassword):
+			respondWithError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, user.ErrEmailAlreadyExists):
+			respondWithError(w, http.StatusConflict, err.Error())
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
@@ -74,7 +83,11 @@ func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		Email: param.Email,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		if errors.Is(err, user.ErrEmailAlreadyExists) {
+			respondWithError(w, http.StatusConflict, err.Error())
+		} else {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
@@ -104,7 +117,11 @@ func (api *API) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		Password: param.Password,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		if errors.Is(err, password.ErrInvalidPassword) {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+		} else {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 

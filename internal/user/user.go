@@ -7,7 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrRequiredCredentials = errors.New("email and password are required")
+var (
+	ErrRequiredCredentials = errors.New("email and password are required")
+	ErrEmailAlreadyExists  = errors.New("email already exists")
+	ErrCouldNotSave        = errors.New("could not save user to the database")
+	ErrCouldNotUpdateEmail = errors.New("could not update user email to the database")
+	ErrCouldNotUpdatePass  = errors.New("could not update user password to the database")
+)
 
 type CreateDTO struct {
 	Email    string
