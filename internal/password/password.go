@@ -1,13 +1,16 @@
-package auth
+package password
 
 import (
+	"errors"
 	"strings"
 	"unicode"
 
 	"github.com/alexedwards/argon2id"
 )
 
-func CheckPassword(password string) bool {
+var ErrInvalidPassword = errors.New("password must be at least 8 characters long, contain at least one uppercase letter, at least one lowercase letter, at least one digit and at least one special character: @$!%*?&")
+
+func Check(password string) bool {
 	if len(password) < 8 {
 		return false
 	}
@@ -30,7 +33,7 @@ func CheckPassword(password string) bool {
 	return hasLower && hasUpper && hasDigit && hasSpecial
 }
 
-func HashPassword(password string) (string, error) {
+func Hash(password string) (string, error) {
 	hash, err := argon2id.CreateHash(password, argon2id.DefaultParams)
 
 	if err != nil {
@@ -40,7 +43,7 @@ func HashPassword(password string) (string, error) {
 	return hash, nil
 }
 
-func MatchPassword(password, hash string) (bool, error) {
+func Match(password, hash string) (bool, error) {
 	match, err := argon2id.ComparePasswordAndHash(password, hash)
 
 	if err != nil {
