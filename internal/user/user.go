@@ -1,10 +1,28 @@
 package user
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrRequiredCredentials = errors.New("email and password are required")
+
+type CreateDTO struct {
+	Email    string
+	Password string
+}
+
+type UpdateEmailDTO struct {
+	ID    uuid.UUID
+	Email string
+}
+
+type UpdatePasswordDTO struct {
+	ID       uuid.UUID
+	Password string
+}
 
 type Response struct {
 	ID        uuid.UUID `json:"id"`

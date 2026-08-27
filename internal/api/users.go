@@ -6,15 +6,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/xcxsar/pos-api/internal/auth"
+	"github.com/xcxsar/pos-api/internal/user"
 )
 
-type userParams struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (api *API) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var params userParams
+	var params struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
 	if err != nil {
@@ -22,7 +21,10 @@ func (api *API) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := api.UserService.Create(r.Context(), params.Email, params.Password)
+	res, err := api.UserService.Create(r.Context(), user.CreateDTO{
+		Email:    params.Email,
+		Password: params.Password,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -67,7 +69,10 @@ func (api *API) UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := api.UserService.UpdateEmail(r.Context(), userID, param.Email)
+	res, err := api.UserService.UpdateEmail(r.Context(), user.UpdateEmailDTO{
+		ID:    userID,
+		Email: param.Email,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
@@ -94,7 +99,10 @@ func (api *API) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := api.UserService.UpdatePassword(r.Context(), userID, param.Password)
+	res, err := api.UserService.UpdatePassword(r.Context(), user.UpdatePasswordDTO{
+		ID:       userID,
+		Password: param.Password,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
