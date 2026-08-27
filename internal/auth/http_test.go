@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -182,9 +183,20 @@ func TestAuthMiddleware(t *testing.T) {
 		if rec.Code != http.StatusUnauthorized {
 			t.Errorf("got status %d, want %d", rec.Code, http.StatusUnauthorized)
 		}
-		if got := strings.TrimSpace(rec.Body.String()); got != wantMsg {
-			t.Errorf("got body %q, want %q", got, wantMsg)
+
+		ct := rec.Header().Get("Content-Type")
+		if ct != "application/json" {
+			t.Errorf("Content-Type = %q, want application/json", ct)
 		}
+
+		var errRes errorResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &errRes); err != nil {
+			t.Fatalf("response is not valid JSON: %v (body: %s)", err, rec.Body.String())
+		}
+		if errRes.Error != wantMsg {
+			t.Errorf("error = %q, want %q", errRes.Error, wantMsg)
+		}
+
 		if *calls != 0 {
 			t.Errorf("next called %d times, want 0", *calls)
 		}
@@ -212,13 +224,13 @@ func TestAuthMiddleware(t *testing.T) {
 	t.Run("rejects missing authorization header", func(t *testing.T) {
 		rec, calls, _ := run(t, newRequest(""))
 
-		assertUnauthorized(t, rec, calls, `{"error": "missing or invalid token"}`)
+		assertUnauthorized(t, rec, calls, "missing or invalid token")
 	})
 
 	t.Run("rejects malformed authorization header", func(t *testing.T) {
 		rec, calls, _ := run(t, newRequest("NotBearer "+userID.String()))
 
-		assertUnauthorized(t, rec, calls, `{"error": "missing or invalid token"}`)
+		assertUnauthorized(t, rec, calls, "missing or invalid token")
 	})
 
 	t.Run("rejects token signed with wrong secret", func(t *testing.T) {
@@ -229,7 +241,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 		rec, calls, _ := run(t, newRequest("Bearer "+token))
 
-		assertUnauthorized(t, rec, calls, `{"error": "invalid or expired token"}`)
+		assertUnauthorized(t, rec, calls, "invalid or expired token")
 	})
 
 	t.Run("rejects expired token", func(t *testing.T) {
@@ -240,7 +252,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 		rec, calls, _ := run(t, newRequest("Bearer "+token))
 
-		assertUnauthorized(t, rec, calls, `{"error": "invalid or expired token"}`)
+		assertUnauthorized(t, rec, calls, "invalid or expired token")
 	})
 
 	t.Run("rejects token with unexpected subject", func(t *testing.T) {
@@ -257,7 +269,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 		rec, calls, _ := run(t, newRequest("Bearer "+signed))
 
-		assertUnauthorized(t, rec, calls, `{"error": "invalid or expired token"}`)
+		assertUnauthorized(t, rec, calls, "invalid or expired token")
 	})
 
 	t.Run("rejects token from untrusted issuer", func(t *testing.T) {
@@ -274,6 +286,25 @@ func TestAuthMiddleware(t *testing.T) {
 
 		rec, calls, _ := run(t, newRequest("Bearer "+signed))
 
-		assertUnauthorized(t, rec, calls, `{"error": "invalid or expired token"}`)
+		assertUnauthorized(t, rec, calls, "invalid or expired token")
 	})
+}
+
+func TestAuthMiddleware_JSONContentType(t *testing.T) {
+	rec := httptest.NewRecorder()
+
+	handler := AuthMiddleware("secret", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	handler(rec, req)
+
+	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("Content-Type = %q, want application/json", ct)
+	}
+
+	if !strings.HasPrefix(rec.Header().Get("Content-Type"), "application/json") {
+		t.Errorf("expected JSON content type for error response")
+	}
 }
