@@ -2,6 +2,7 @@ package category
 
 import (
 	"context"
+	"strings"
 
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
 )
@@ -24,15 +25,16 @@ func toResponse(c sqlc.Category) Response {
 }
 
 func (s *Service) Create(ctx context.Context, dto CreateDTO) (Response, error) {
-	if dto.Name == "" {
-		return Response{}, ErrBlankName
+	name := strings.TrimSpace(dto.Name)
+	if name == "" {
+		name = "Unnamed"
 	}
 
-	if !validateName(dto.Name) {
+	if !validateName(name) {
 		return Response{}, ErrInvalidCharacters
 	}
 
-	c, err := s.queries.CreateCategory(ctx, dto.Name)
+	c, err := s.queries.CreateCategory(ctx, name)
 	if err != nil {
 		return Response{}, err
 	}
@@ -64,17 +66,18 @@ func (s *Service) GetByID(ctx context.Context, id int64) (Response, error) {
 }
 
 func (s *Service) Update(ctx context.Context, dto UpdateDTO) (Response, error) {
-	if dto.Name == "" {
-		return Response{}, ErrBlankName
+	name := strings.TrimSpace(dto.Name)
+	if name == "" {
+		name = "Unnamed"
 	}
 
-	if !validateName(dto.Name) {
+	if !validateName(name) {
 		return Response{}, ErrInvalidCharacters
 	}
 
 	c, err := s.queries.UpdateCategory(ctx, sqlc.UpdateCategoryParams{
 		ID:   dto.ID,
-		Name: dto.Name,
+		Name: name,
 	})
 	if err != nil {
 		return Response{}, err
