@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	ErrBlankName    = errors.New("product name cannot be empty")
 	ErrInvalidPrice = errors.New("product price cannot be negative")
 	ErrInvalidStock = errors.New("product stock cannot be negative")
 )

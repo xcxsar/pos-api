@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/shopspring/decimal"
 	"github.com/xcxsar/pos-api/internal/store/sqlc"
@@ -41,9 +42,11 @@ func toResponse(p sqlc.Product) (Response, error) {
 }
 
 func (s *Service) Create(ctx context.Context, dto CreateDTO) (Response, error) {
-	if dto.Name == "" || dto.Name == "Unnamed" {
-		return Response{}, ErrBlankName
+	name := strings.TrimSpace(dto.Name)
+	if name == "" {
+		name = "Unnamed"
 	}
+
 	if dto.Price.IsNegative() {
 		return Response{}, ErrInvalidPrice
 	}
@@ -57,7 +60,7 @@ func (s *Service) Create(ctx context.Context, dto CreateDTO) (Response, error) {
 	}
 
 	p, err := s.queries.CreateProduct(ctx, sqlc.CreateProductParams{
-		Name:       dto.Name,
+		Name:       name,
 		Price:      dto.Price.String(),
 		Stock:      dto.Stock,
 		CategoryID: categoryID,
@@ -97,9 +100,11 @@ func (s *Service) GetByID(ctx context.Context, id int64) (Response, error) {
 }
 
 func (s *Service) Update(ctx context.Context, dto UpdateDTO) (Response, error) {
-	if dto.Name == "" {
-		return Response{}, ErrBlankName
+	name := strings.TrimSpace(dto.Name)
+	if name == "" {
+		name = "Unnamed"
 	}
+
 	if dto.Price.IsNegative() {
 		return Response{}, ErrInvalidPrice
 	}
@@ -114,7 +119,7 @@ func (s *Service) Update(ctx context.Context, dto UpdateDTO) (Response, error) {
 
 	p, err := s.queries.UpdateProduct(ctx, sqlc.UpdateProductParams{
 		ID:         dto.ID,
-		Name:       dto.Name,
+		Name:       name,
 		Price:      dto.Price.String(),
 		Stock:      dto.Stock,
 		CategoryID: categoryID,

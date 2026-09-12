@@ -36,7 +36,7 @@ func (api *API) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	res, err := api.ProductService.Create(r.Context(), dto)
 	if err != nil {
-		if errors.Is(err, product.ErrBlankName) || errors.Is(err, product.ErrInvalidPrice) || errors.Is(err, product.ErrInvalidStock) {
+		if errors.Is(err, product.ErrInvalidPrice) || errors.Is(err, product.ErrInvalidStock) {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -108,7 +108,7 @@ func (api *API) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	res, err := api.ProductService.Update(r.Context(), dto)
 	if err != nil {
-		if errors.Is(err, product.ErrBlankName) || errors.Is(err, product.ErrInvalidPrice) {
+		if errors.Is(err, product.ErrInvalidPrice) || errors.Is(err, product.ErrInvalidStock) {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
