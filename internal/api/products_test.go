@@ -305,6 +305,19 @@ func TestGetProductByID_NotFound(t *testing.T) {
 	assertErrorBody(t, rec, "requested product does not exist")
 }
 
+func TestGetProductByID_DBError(t *testing.T) {
+	_, mock, mux := newTestAPI(t)
+
+	mock.ExpectQuery(`SELECT .+ FROM products WHERE id`).
+		WithArgs(int64(7)).
+		WillReturnError(sql.ErrConnDone)
+
+	rec := doRequest(mux, http.MethodGet, "/api/products/7", "")
+
+	assertStatus(t, rec, http.StatusInternalServerError)
+	assertErrorBody(t, rec, "could not retrieve product")
+}
+
 func TestUpdateProduct_Success(t *testing.T) {
 	_, mock, mux := newTestAPI(t)
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -345,6 +358,19 @@ func TestUpdateProduct_NotFound(t *testing.T) {
 
 	assertStatus(t, rec, http.StatusNotFound)
 	assertErrorBody(t, rec, "targeted product does not exist")
+}
+
+func TestUpdateProduct_PreCheckDBError(t *testing.T) {
+	_, mock, mux := newTestAPI(t)
+
+	mock.ExpectQuery(`SELECT .+ FROM products WHERE id`).
+		WithArgs(int64(5)).
+		WillReturnError(sql.ErrConnDone)
+
+	rec := doRequest(mux, http.MethodPut, "/api/products/5", `{"name":"Americano","price":1,"stock":1}`)
+
+	assertStatus(t, rec, http.StatusInternalServerError)
+	assertErrorBody(t, rec, "could not retrieve product")
 }
 
 func TestUpdateProduct_InvalidJSON(t *testing.T) {

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -70,7 +71,11 @@ func (api *API) GetProductByID(w http.ResponseWriter, r *http.Request) {
 	res, err := api.ProductService.GetByID(r.Context(), parsedID)
 
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "requested product does not exist")
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "requested product does not exist")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "could not retrieve product")
 		return
 	}
 
@@ -88,7 +93,11 @@ func (api *API) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	_, err = api.ProductService.GetByID(r.Context(), parsedID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "targeted product does not exist")
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "targeted product does not exist")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "could not retrieve product")
 		return
 	}
 
