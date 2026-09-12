@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: sqlc migrate-up migrate-down migrate-status migrate-test-up migrate-test-down
+.PHONY: sqlc migrate-up migrate-down migrate-status migrate-test-up migrate-test-down run
 
 sqlc:
 	sqlc generate
@@ -19,3 +19,6 @@ test-migrate-up:
 
 test-migrate-down:
 	goose -dir db/migrations postgres $(TEST_DB_URL) down
+
+run:
+	cd cmd/api && go run .
