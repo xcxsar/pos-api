@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -29,7 +30,7 @@ func (api *API) CreateCategory(w http.ResponseWriter, r *http.Request) {
 
 	res, err := api.CategoryService.Create(r.Context(), dto)
 	if err != nil {
-		if errors.Is(err, category.ErrBlankName) || errors.Is(err, category.ErrInvalidCharacters) {
+		if errors.Is(err, category.ErrInvalidCharacters) {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -63,7 +64,11 @@ func (api *API) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
 	res, err := api.CategoryService.GetByID(r.Context(), parsedID)
 
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "requested category does not exist")
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "requested category does not exist")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "could not retrieve category")
 		return
 	}
 
@@ -81,7 +86,11 @@ func (api *API) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 
 	_, err = api.CategoryService.GetByID(r.Context(), parsedID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "targeted category does not exist")
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "targeted category does not exist")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "could not retrieve category")
 		return
 	}
 
@@ -98,7 +107,7 @@ func (api *API) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 
 	res, err := api.CategoryService.Update(r.Context(), dto)
 	if err != nil {
-		if errors.Is(err, category.ErrBlankName) || errors.Is(err, category.ErrInvalidCharacters) {
+		if errors.Is(err, category.ErrInvalidCharacters) {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}

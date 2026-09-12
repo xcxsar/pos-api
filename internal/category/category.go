@@ -3,10 +3,10 @@ package category
 import (
 	"errors"
 	"time"
+	"unicode"
 )
 
 var (
-	ErrBlankName         = errors.New("category name cannot be empty")
 	ErrInvalidCharacters = errors.New("category name cannot contain numbers, spaces or special characters")
 )
 
@@ -30,9 +30,8 @@ func validateName(s string) bool {
 	if len(s) == 0 {
 		return false
 	}
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+	for _, r := range s {
+		if !unicode.IsLetter(r) {
 			return false
 		}
 	}
