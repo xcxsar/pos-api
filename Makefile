@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: sqlc migrate-up migrate-down migrate-status migrate-test-up migrate-test-down run
+.PHONY: sqlc migrate-up migrate-down migrate-status test-migrate-up test-migrate-down run test coverage
 
 sqlc:
 	sqlc generate
@@ -19,6 +19,12 @@ test-migrate-up:
 
 test-migrate-down:
 	goose -dir db/migrations postgres $(TEST_DB_URL) down
+
+test:
+	go test ./...
+
+coverage:
+	go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out
 
 run:
 	cd cmd/api && go run .
